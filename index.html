@@ -5312,6 +5312,8 @@ function renderHomeDay() {
         const clone = sourcePanel.cloneNode(true);
         clone.id = 'home-free-clone';
         clone.style.display = 'block';
+        // Remove free-day-panel class to avoid interference with switchFreeDay
+        clone.classList.remove('free-day-panel', 'active');
         // Use innerHTML to avoid moving DOM nodes
         freeEl.innerHTML = clone.outerHTML;
       }
