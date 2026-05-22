@@ -5312,11 +5312,8 @@ function renderHomeDay() {
         const clone = sourcePanel.cloneNode(true);
         clone.id = 'home-free-clone';
         clone.style.display = 'block';
-        // Remove the "Lancer la séance" button to avoid duplicate IDs
-        const btn = clone.querySelector('.btn-launch-fs');
-        if (btn) btn.parentNode && btn.parentNode.removeChild(btn);
-        freeEl.innerHTML = '';
-        freeEl.appendChild(clone);
+        // Use innerHTML to avoid moving DOM nodes
+        freeEl.innerHTML = clone.outerHTML;
       }
     }
   }
