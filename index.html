@@ -3825,9 +3825,22 @@ function shareSetFormat(fmt, btn) {
   shareFormat = fmt;
   document.querySelectorAll('.share-fmt-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  if (window._walkStats) drawWalkCanvas();
-  else if (window._wellnessShareCard) shareGenerateWellness();
-  else shareGenerate();
+  const canvasWrap = document.getElementById('share-canvas-wrap');
+  const textWrap = document.getElementById('share-text-wrap');
+  const actionsWrap = document.querySelector('.share-actions');
+  if (fmt === 'text') {
+    if (canvasWrap) canvasWrap.style.display = 'none';
+    if (textWrap) textWrap.style.display = 'block';
+    if (actionsWrap) actionsWrap.style.display = 'none';
+    shareGenerateText();
+  } else {
+    if (canvasWrap) canvasWrap.style.display = 'block';
+    if (textWrap) textWrap.style.display = 'none';
+    if (actionsWrap) actionsWrap.style.display = 'flex';
+    if (window._walkStats) drawWalkCanvas();
+    else if (window._wellnessShareCard) shareGenerateWellness();
+    else shareGenerate();
+  }
 }
 
 
@@ -5386,6 +5399,112 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+
+// ── SHARE TEXT MODE ──────────────────────────────────────────────────
+function shareGenerateText() {
+  const activePanel = document.querySelector('.app-panel.active');
+  const panelId = activePanel ? activePanel.id : '';
+  const lines = [];
+  const today = new Date().toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
+  
+  lines.push('🏋️ FITNESSHUB — ' + today.toUpperCase());
+  lines.push('');
+
+  if (panelId === 'panel-muscu') {
+    const activeTab = document.querySelector('[data-day].active');
+    const dayNum = activeTab ? activeTab.getAttribute('data-day') : '1';
+    const dayPanel = document.getElementById('day-' + dayNum);
+    const dayTitle = dayPanel?.querySelector('.day-title')?.textContent || '';
+    lines.push('💪 MUSCULATION — ' + dayTitle.toUpperCase());
+    lines.push('─'.repeat(30));
+    dayPanel?.querySelectorAll('.ex-card').forEach(card => {
+      const name = card.querySelector('.ex-name-big')?.textContent || '';
+      const vals = card.querySelectorAll('.ex-meta-val');
+      const sets = vals[0]?.textContent || '';
+      const reps = vals[1]?.textContent || '';
+      if (name) lines.push('• ' + name + (sets ? ' — ' + sets + ' séries' : '') + (reps ? ' × ' + reps : ''));
+    });
+
+  } else if (panelId === 'panel-free') {
+    const activeTab = document.querySelector('[data-free-day].active');
+    const dayNum = activeTab ? activeTab.getAttribute('data-free-day') : '1';
+    const freePanel = document.getElementById('free-day-' + dayNum);
+    const dayNames = {1:'Lundi',2:'Mardi',3:'Mercredi',4:'Jeudi',5:'Vendredi'};
+    lines.push('⚡ FREELETICS — ' + (dayNames[dayNum] || '').toUpperCase());
+    lines.push('─'.repeat(30));
+    freePanel?.querySelectorAll('.free-block').forEach(block => {
+      const blockTitle = block.querySelector('.free-block-title')?.textContent || '';
+      const badge = block.querySelector('.free-block-badge')?.textContent || '';
+      lines.push('');
+      lines.push('📌 ' + blockTitle.toUpperCase() + (badge ? ' (' + badge + ')' : ''));
+      block.querySelectorAll('.free-ex-card').forEach(card => {
+        const name = card.querySelector('.free-ex-name')?.textContent || '';
+        const vals = card.querySelectorAll('.free-ex-stat-val');
+        const sets = vals[0]?.textContent || '';
+        const pause = vals[1]?.textContent || '';
+        if (name) lines.push('  • ' + name + (sets ? ' — ' + sets + ' séries' : '') + (pause ? ' · ' + pause + ' pause' : ''));
+      });
+    });
+
+  } else if (panelId === 'panel-run') {
+    const savedDate = localStorage.getItem('fh-race-date') || '2026-10-04';
+    const race = new Date(savedDate + 'T00:00:00');
+    const now = new Date();
+    const weeksToRace = Math.ceil((race - now) / (7 * 86400000));
+    const wNum = Math.max(1, Math.min(52, 52 - weeksToRace));
+    const raceType = window.currentRaceType || localStorage.getItem('fh-saved-race-type') || 'marathon';
+    let w = RUN_PLAN[wNum];
+    if (raceType === '10k' && typeof get10KPlan === 'function') w = get10KPlan(wNum);
+    else if (raceType === 'semi' && typeof getSemiPlan === 'function') w = getSemiPlan(wNum);
+    const dayMap = {0:'dim',1:'lun',2:'mar',3:'mer',4:'jeu',5:'ven',6:'sam'};
+    const dk = dayMap[now.getDay()];
+    const d = w?.days?.[dk];
+    lines.push('🏃 RUNNING — SEMAINE ' + wNum + '/52');
+    lines.push('─'.repeat(30));
+    if (d) {
+      lines.push('• ' + d.n + (d.km > 0 ? ' — ' + d.km + ' km' : ''));
+      if (d.det) lines.push('  ' + d.det);
+      if (d.pk && d.pk !== '—') lines.push('  ⏱ ' + d.pk + '/km · 🚀 ' + d.kph + ' km/h · ❤️ ' + d.fc);
+    }
+
+  } else if (panelId === 'panel-wellness') {
+    lines.push('🌊 WELLNESS & SPA');
+    lines.push('─'.repeat(30));
+    document.querySelectorAll('.protocol-step').forEach(step => {
+      const title = step.querySelector('strong, b')?.textContent || step.textContent.trim().slice(0, 50);
+      if (title) lines.push('• ' + title);
+    });
+
+  } else if (panelId === 'panel-stretch') {
+    lines.push('🌙 ÉTIREMENTS');
+    lines.push('─'.repeat(30));
+    document.querySelectorAll('.stretch-ex-name').forEach(el => {
+      lines.push('• ' + el.textContent);
+    });
+  }
+
+  lines.push('');
+  lines.push('🔗 personal-fitness-hub.netlify.app');
+
+  const textarea = document.getElementById('share-text-area');
+  if (textarea) textarea.value = lines.join('\n');
+}
+
+function shareCopyText() {
+  const textarea = document.getElementById('share-text-area');
+  if (!textarea) return;
+  navigator.clipboard.writeText(textarea.value).then(() => {
+    const confirm = document.getElementById('share-copy-confirm');
+    if (confirm) {
+      confirm.style.display = 'inline';
+      setTimeout(() => { confirm.style.display = 'none'; }, 2500);
+    }
+  }).catch(() => {
+    textarea.select();
+    document.execCommand('copy');
+  });
+}
+
 </script>
 
 <!-- ── FULLSCREEN SÉANCE OVERLAY ── -->
@@ -5414,6 +5533,14 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="share-format-toggle">
       <button class="share-fmt-btn active" onclick="shareSetFormat('square',this)">⬛ Carré 1:1</button>
       <button class="share-fmt-btn" onclick="shareSetFormat('story',this)">📱 Story 9:16</button>
+      <button class="share-fmt-btn" onclick="shareSetFormat('text',this)">📋 Copier texte</button>
+    </div>
+    <div id="share-text-wrap" style="display:none;margin-top:16px">
+      <textarea id="share-text-area" readonly style="width:100%;height:280px;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:12px;line-height:1.7;padding:16px;resize:vertical;box-sizing:border-box"></textarea>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="share-btn-dl" onclick="shareCopyText()" style="flex:1">📋 Copier</button>
+        <span id="share-copy-confirm" style="display:none;font-family:'DM Mono',monospace;font-size:11px;color:#22c55e;align-self:center">✓ Copié !</span>
+      </div>
     </div>
     <div id="share-canvas-wrap">
       <canvas id="share-canvas"></canvas>
