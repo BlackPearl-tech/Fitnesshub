@@ -3886,7 +3886,8 @@ function shareGenerate() {
     accent = '#e8ff3c';
     panelName = 'MUSCULATION';
     const activeDay = document.querySelector('.day-tab.active');
-    const dayPanel = document.querySelector('.day-panel.active');
+    const activeMuscuDay = activeDay ? activeDay.getAttribute('data-day') : '1';
+    const dayPanel = document.getElementById('day-' + activeMuscuDay);
     // Don't use short name (LUN/MAR...) — only use full day title from panel
     dayName = '';
     const dayTitle = dayPanel?.querySelector('.day-title');
@@ -3926,7 +3927,8 @@ function shareGenerate() {
     panelName = 'HIIT MUSCU';
     const activeDay = document.querySelector('[data-free-day].active');
     dayName = ''; // Don't show short name (LUN/MAR...)
-    const freePanel = document.querySelector('.free-day-panel.active');
+    const activeDayNum = activeDay ? activeDay.getAttribute('data-free-day') : '1';
+    const freePanel = document.getElementById('free-day-' + activeDayNum);
     if (freePanel) {
       freePanel.querySelectorAll('.free-block').forEach(block => {
         const title = block.querySelector('.free-block-title')?.textContent || '';
