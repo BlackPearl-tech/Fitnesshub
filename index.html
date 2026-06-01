@@ -1458,6 +1458,16 @@ details summary::-webkit-details-marker { display: none; }
   box-shadow: 0 0 0 1px var(--run), 0 4px 20px rgba(255,107,53,.2);
   position: relative;
 }
+.run-day-card.run-selected {
+  border: 2px solid var(--run);
+  box-shadow: 0 0 0 1px var(--run), 0 4px 16px rgba(255,107,53,.15);
+  position: relative;
+}
+.run-day-card:hover {
+  border-color: var(--border);
+  opacity: .85;
+  transition: opacity .15s;
+}
 .run-today-badge {
   font-family: 'DM Mono', monospace;
   font-size: 9px;
@@ -5128,8 +5138,10 @@ function renderRunWeek(wNum) {
       </div>` : '';
     const todayMap = {1:'lun',2:'mar',3:'mer',4:'jeu',5:'ven',6:'sam',0:'dim'};
   const todayKey = todayMap[new Date().getDay()];
-  return `<div class="run-day-card${isRest ? ' rest' : ''}${dk === todayKey ? ' today' : ''}">
+  if (!window._selectedRunDay) window._selectedRunDay = todayKey;
+  return `<div class="run-day-card${isRest ? ' rest' : ''}${dk === todayKey ? ' today' : ''}${window._selectedRunDay === dk && dk !== todayKey ? ' run-selected' : ''}" onclick="selectRunDay('${dk}')" style="cursor:pointer">
       ${dk === todayKey ? '<div class="run-today-badge">📍 Aujourd’hui</div>' : ''}
+      ${window._selectedRunDay === dk && dk !== todayKey ? '<div class="run-today-badge" style="color:var(--run)">📤 Sélectionné</div>' : ''}
       <span class="run-day-name">${DAY_NAMES[dk]}</span>
       <span class="run-type-badge ${d.b}">${d.b.replace('rt-','').toUpperCase()}</span>
       <span class="run-day-type">${d.n}</span>
@@ -5137,7 +5149,7 @@ function renderRunWeek(wNum) {
       ${kmStr ? `<span class="run-day-km">${kmStr}</span>` : ''}
       ${chips}
     </div>`;
-  }).join('');
+  }).join('');;
 }
 
 
@@ -5459,7 +5471,7 @@ function shareGenerateText() {
     if (raceType === '10k' && typeof get10KPlan === 'function') w = get10KPlan(wNum);
     else if (raceType === 'semi' && typeof getSemiPlan === 'function') w = getSemiPlan(wNum);
     const dayMap = {0:'dim',1:'lun',2:'mar',3:'mer',4:'jeu',5:'ven',6:'sam'};
-    const dk = dayMap[now.getDay()];
+    const dk = window._selectedRunDay || dayMap[now.getDay()];
     const d = w?.days?.[dk];
     lines.push('🏃 RUNNING — SEMAINE ' + wNum + '/52');
     lines.push('─'.repeat(30));
@@ -5505,6 +5517,14 @@ function shareCopyText() {
     textarea.select();
     document.execCommand('copy');
   });
+}
+
+
+// ── RUN DAY SELECTION ─────────────────────────────────────────────────
+function selectRunDay(dk) {
+  window._selectedRunDay = dk;
+  // Re-render to update selection highlight
+  if (typeof runCurrentWeek !== 'undefined') renderRunWeek(runCurrentWeek);
 }
 
 </script>
